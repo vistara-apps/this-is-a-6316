@@ -14,7 +14,13 @@
     "openai": "^4.28.0",
     "lucide-react": "^0.263.1",
     "date-fns": "^2.30.0",
-    "recharts": "^2.8.0"
+    "recharts": "^2.8.0",
+    "@privy-io/react-auth": "^1.46.4",
+    "@supabase/supabase-js": "^2.38.4",
+    "@stripe/stripe-js": "^2.1.11",
+    "crypto-js": "^4.2.0",
+    "react-router-dom": "^6.8.1",
+    "react-hot-toast": "^2.4.1"
   },
   "devDependencies": {
     "@types/react": "^18.0.28",

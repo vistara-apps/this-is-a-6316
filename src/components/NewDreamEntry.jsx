@@ -58,14 +58,21 @@ export const NewDreamEntry = ({ onSave, onCancel, onCheckAccess }) => {
     setIsGeneratingInterpretation(true);
     
     try {
-      // Simulate AI processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Import the AI service dynamically to avoid issues if not configured
+      const { generateDreamInterpretation } = await import('../services/openai.js');
       
-      const interpretation = `This dream appears to reflect themes of exploration and personal growth. The symbols and narrative suggest your subconscious is processing recent experiences and emotions. Consider how the dream's elements might relate to your current life circumstances and aspirations.`;
+      const interpretation = await generateDreamInterpretation(
+        dreamEntry.dreamText,
+        dreamEntry.emotions,
+        dreamEntry.tags
+      );
       
       setDreamEntry(prev => ({ ...prev, interpretation }));
     } catch (error) {
       console.error('Error generating interpretation:', error);
+      // Fallback interpretation on error
+      const fallbackInterpretation = `This dream appears to reflect themes of exploration and personal growth. The symbols and narrative suggest your subconscious is processing recent experiences and emotions. Consider how the dream's elements might relate to your current life circumstances and aspirations.`;
+      setDreamEntry(prev => ({ ...prev, interpretation: fallbackInterpretation }));
     } finally {
       setIsGeneratingInterpretation(false);
     }

@@ -1,59 +1,53 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Check, Star, Zap, Shield, TrendingUp, Download, Headphones } from 'lucide-react';
+import { SUBSCRIPTION_TIERS, createCheckoutSession, formatPrice } from '../services/stripe.js';
+import toast from 'react-hot-toast';
 
-export const SubscriptionModal = ({ onClose, onUpgrade }) => {
-  const plans = [
-    {
-      name: 'Free',
-      price: '$0',
-      period: 'forever',
-      current: true,
-      features: [
-        'Up to 5 dream entries per month',
-        'Basic AI interpretations',
-        'Simple dream logging',
-        'Basic search functionality'
-      ],
-      limitations: [
-        'Limited dream entries',
-        'No pattern analysis',
-        'No data export'
-      ]
-    },
-    {
-      name: 'Pro',
-      price: '$5',
-      period: 'month',
-      popular: true,
-      features: [
-        'Unlimited dream entries',
-        'Advanced AI interpretations',
-        'Pattern tracking & analysis',
-        'Encrypted cloud storage',
-        'Advanced search & filtering',
-        'Monthly insight reports'
-      ]
-    },
-    {
-      name: 'Premium',
-      price: '$15',
-      period: 'month',
-      features: [
-        'Everything in Pro',
-        'Personalized dream coaching',
-        'Advanced analytics dashboard',
-        'Data export (PDF, CSV)',
-        'Priority customer support',
-        'Early access to new features',
-        'Custom interpretation models'
-      ]
+export const SubscriptionModal = ({ onClose, onUpgrade, currentUser }) => {
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handleUpgrade = async (tierName) => {
+    if (tierName === 'free') {
+      onUpgrade('free');
+      return;
     }
-  ];
 
-  const handleUpgrade = (planName) => {
-    // In a real app, this would integrate with Stripe
-    onUpgrade(planName.toLowerCase());
+    setIsProcessing(true);
+    
+    try {
+      const tier = SUBSCRIPTION_TIERS[tierName];
+      
+      if (!tier.priceId) {
+        // For development/demo purposes, simulate upgrade
+        toast.success(`Upgraded to ${tier.name} plan!`);
+        onUpgrade(tierName);
+        return;
+      }
+
+      // Create Stripe checkout session
+      await createCheckoutSession(tier.priceId, currentUser?.user_id);
+      
+    } catch (error) {
+      console.error('Upgrade error:', error);
+      toast.error('Failed to process upgrade. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
+
+  // Convert SUBSCRIPTION_TIERS to plans format for the UI
+  const plans = Object.entries(SUBSCRIPTION_TIERS).map(([key, tier]) => ({
+    id: key,
+    name: tier.name,
+    price: formatPrice(tier.price),
+    period: tier.price === 0 ? 'forever' : 'month',
+    current: currentUser?.subscriptionTier === key,
+    popular: key === 'pro',
+    features: tier.features,
+    priceId: tier.priceId
+  }));
+
+
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
@@ -130,17 +124,17 @@ export const SubscriptionModal = ({ onClose, onUpgrade }) => {
                 </div>
 
                 <button
-                  onClick={() => handleUpgrade(plan.name)}
-                  disabled={plan.current}
+                  onClick={() => handleUpgrade(plan.id)}
+                  disabled={plan.current || isProcessing}
                   className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
-                    plan.current
+                    plan.current || isProcessing
                       ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                       : plan.popular
                       ? 'bg-primary text-white hover:bg-primary/90'
                       : 'bg-gray-100 text-text-primary hover:bg-gray-200'
                   }`}
                 >
-                  {plan.current ? 'Current Plan' : `Upgrade to ${plan.name}`}
+                  {isProcessing ? 'Processing...' : plan.current ? 'Current Plan' : `Upgrade to ${plan.name}`}
                 </button>
               </div>
             ))}

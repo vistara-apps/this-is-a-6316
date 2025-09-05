@@ -110,6 +110,7 @@ function App() {
       
       {showSubscriptionModal && (
         <SubscriptionModal 
+          currentUser={user}
           onClose={() => setShowSubscriptionModal(false)}
           onUpgrade={(tier) => {
             setUser({ ...user, subscriptionTier: tier });
